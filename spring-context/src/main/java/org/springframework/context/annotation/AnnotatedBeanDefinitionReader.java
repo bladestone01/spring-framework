@@ -126,6 +126,8 @@ public class AnnotatedBeanDefinitionReader {
 
 
 	/**
+	 * 将当前Class，以BeantioDefinition方式注册到容器.
+	 *
 	 * Register one or more component classes to be processed.
 	 * <p>Calls to {@code register} are idempotent; adding the same
 	 * component class more than once has no additional effect.
@@ -234,6 +236,8 @@ public class AnnotatedBeanDefinitionReader {
 	}
 
 	/**
+	 * 实际注册BeanfinitioDefintifinition方法.
+	 *
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
 	 * @param beanClass the class of the bean

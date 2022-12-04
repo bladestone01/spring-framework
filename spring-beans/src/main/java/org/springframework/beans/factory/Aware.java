@@ -17,6 +17,9 @@
 package org.springframework.beans.factory;
 
 /**
+ * 标识接口.
+ * 以回调方式，获取Spring容器触发。
+ *
  * A marker superinterface indicating that a bean is eligible to be notified by the
  * Spring container of a particular framework object through a callback-style method.
  * The actual method signature is determined by individual subinterfaces but should

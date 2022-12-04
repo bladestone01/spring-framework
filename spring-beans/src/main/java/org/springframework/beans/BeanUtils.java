@@ -172,6 +172,8 @@ public abstract class BeanUtils {
 	}
 
 	/**
+	 * 基于构造方法创建对象.
+	 *
 	 * Convenience method to instantiate a class using the given constructor.
 	 * <p>Note that this method tries to set the constructor accessible if given a
 	 * non-accessible (that is, non-public) constructor, and supports Kotlin classes
@@ -191,22 +193,27 @@ public abstract class BeanUtils {
 				return KotlinDelegate.instantiateClass(ctor, args);
 			}
 			else {
+				//构造方案的参数个数
 				int parameterCount = ctor.getParameterCount();
 				Assert.isTrue(args.length <= parameterCount, "Can't specify more arguments than constructor parameters");
+				//无参数，则使用默认构造方法
 				if (parameterCount == 0) {
 					return ctor.newInstance();
 				}
 				Class<?>[] parameterTypes = ctor.getParameterTypes();
 				Object[] argsWithDefaultValues = new Object[args.length];
 				for (int i = 0 ; i < args.length; i++) {
+					//参数为空，则尝试判断其是否为基本数据类型，赋予缺省值
 					if (args[i] == null) {
 						Class<?> parameterType = parameterTypes[i];
+						//缺省数据类型
 						argsWithDefaultValues[i] = (parameterType.isPrimitive() ? DEFAULT_TYPE_VALUES.get(parameterType) : null);
 					}
 					else {
 						argsWithDefaultValues[i] = args[i];
 					}
 				}
+				//基于有参的构造方法创建Bean instance
 				return ctor.newInstance(argsWithDefaultValues);
 			}
 		}

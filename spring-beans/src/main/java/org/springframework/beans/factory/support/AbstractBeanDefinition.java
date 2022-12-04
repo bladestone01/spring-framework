@@ -39,6 +39,11 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * BeanDefinition全功能实现，共有属性和逻辑实现。
+ *     GenericBeanDefinition: 动态的BeanDefinition，可以动态设置为root/child beandefinition
+ *     ChildBeanDefinition:  子Bean
+ *     RootBeanDefinition: 无parent BeanDefinition
+ *
  * Base class for concrete, full-fledged {@link BeanDefinition} classes,
  * factoring out common properties of {@link GenericBeanDefinition},
  * {@link RootBeanDefinition}, and {@link ChildBeanDefinition}.
@@ -60,12 +65,15 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		implements BeanDefinition, Cloneable {
 
 	/**
+	 * 缺省作用域名称常量定义:"",等价于 singleton
+	 *
 	 * Constant for the default scope name: {@code ""}, equivalent to singleton
 	 * status unless overridden from a parent bean definition (if applicable).
 	 */
 	public static final String SCOPE_DEFAULT = "";
 
 	/**
+	 *
 	 * Constant that indicates no external autowiring at all.
 	 * @see #setAutowireMode
 	 */
@@ -138,65 +146,158 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final String INFER_METHOD = "(inferred)";
 
 
+	/**
+	 * 当前bean定义的beanClass属性，注意并不一定是最终生成的bean所使用的class，
+	 * 可能是 String, 也可能是 Class
+	 */
 	@Nullable
 	private volatile Object beanClass;
 
+	/**
+	 * 目标Bean的作用域, 初始化为"", 相当于singleton
+	 */
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 
+	/**
+	 * 是否抽象flag
+	 */
 	private boolean abstractFlag = false;
 
+	/**
+	 * 是否延迟加载
+	 */
 	@Nullable
 	private Boolean lazyInit;
 
+	/**
+	 * 自动装配模式, 初始化为不使用自动装配.
+	 */
 	private int autowireMode = AUTOWIRE_NO;
 
+	/**
+	 * 是否做依赖检查
+	 * 默认值： 不做依赖检查
+	 */
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
 
+	/**
+	 * 当前Bean依赖的Bean数组.
+	 *
+	 */
 	@Nullable
 	private String[] dependsOn;
 
+	/**
+	 * 是否作为自动装配候选，初始化为true
+	 */
 	private boolean autowireCandidate = true;
 
+	/**
+	 * 自动装配时，是否作为主要候选，初始化为false
+	 */
 	private boolean primary = false;
 
+	/**
+	 * 装配对象qualifier Map
+	 */
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
+	/**
+	 * 自定义supplier扩展逻辑.
+	 *
+	 */
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
+	/**
+	 * 是否允许访问非公开构造函数，非公开方法
+	 * 该属性主要用于构造函数解析，初始化方法,析构方法解析，bean属性的set/get方法不受该属性影响
+	 *
+	 */
 	private boolean nonPublicAccessAllowed = true;
 
+	/**
+	 * 	调用构造函数时，是否采用宽松匹配
+	 */
 	private boolean lenientConstructorResolution = true;
 
+	/**
+	 * factoryBean名称
+	 */
 	@Nullable
 	private String factoryBeanName;
 
+	/**
+	 * 工厂方法名称
+	 */
 	@Nullable
 	private String factoryMethodName;
 
+	/**
+	 * 构造方法参数值
+	 */
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
+	/**
+	 *  属性值，注意这里使用了 MutablePropertyValues，表示这些属性值在
+	 *  最终被设置到 bean实例之前一直是可以被修改的
+	 */
 	@Nullable
 	private MutablePropertyValues propertyValues;
 
+	/**
+	 * 描述在运行时，被动态覆盖的方法集合.
+	 *
+	 */
 	private MethodOverrides methodOverrides = new MethodOverrides();
 
+	/**
+	 * 初始化方法名称列表.
+	 *
+	 */
 	@Nullable
 	private String[] initMethodNames;
 
+	/**
+	 * 销毁方法名称列表.
+	 *
+	 */
 	@Nullable
 	private String[] destroyMethodNames;
 
+	/**
+	 *  是否执行Init method的状态
+	 */
 	private boolean enforceInitMethod = true;
 
+	/**
+	 * 是否执行destroy method状态
+	 */
 	private boolean enforceDestroyMethod = true;
 
+	/**
+	 * 是否是一个合成 BeanDefinition,
+	 * 合成 在这里的意思表示这不是一个应用开发人员自己定义的 BeanDefinition, 而是程序
+	 * 自己组装而成的一个 BeanDefinition, 例子 :
+	 *  1. 自动代理的helper bean，一个基础设施bean，因为使用<aop:config> 被自动合成创建;
+	 *  2. bean errorPageRegistrarBeanPostProcessor , Spring boot 自动配置针对Web错误页面的
+	 *  一个bean，这个bean不需要应用开发人员定义，而是框架根据上下文自动合成组装而成；
+	 *  3. 给用户自定义一些BeanDefinition注册到容器中以当作工具类来使用
+	 */
 	private boolean synthetic = false;
 
+	/**
+	 * 当前bean 定义的角色，初始化为 ROLE_APPLICATION ， 提示这是一个应用bean
+	 * 另外还有基础设施bean（仅供框架内部工作使用），和 支持bean
+	 *
+	 */
 	private int role = BeanDefinition.ROLE_APPLICATION;
 
+	/**
+	 * human readable,当前bean定义人类可读的描述文本
+	 */
 	@Nullable
 	private String description;
 
@@ -221,6 +322,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * 深度复制给定的bean定义创建一个新的AbstractBeanDefinition.
+	 *
 	 * Create a new AbstractBeanDefinition as a deep copy of the given
 	 * bean definition.
 	 * @param original the original bean definition to copy from
@@ -279,6 +382,12 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 
 	/**
+	 * 覆盖当前BeanDefinition设置，即将子BeanDefinition覆盖parent BeanDefinition设置。
+	 *  本方法的一个主要用途是用在根据bean定义之间的父子关系生成最终merged的孩子bean定义对象:
+	 * 	  此时先使用双亲bean定义生成一个RootBeanDefinition,然后调用该RootBeanDefinition
+	 * 	  对象的overrideFrom(other)方法，这里other就是child bean定义，然后这个RootBeanDefinition
+	 * 	  就是一个继承自双亲bean定义又符合原始child bean定义的一个最终被使用的BeanDefinition了。
+	 *
 	 * Override settings in this bean definition (presumably a copied parent
 	 * from a parent-child inheritance relationship) from the given bean
 	 * definition (presumably the child).
@@ -358,6 +467,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * 使用缺省值定义进行当前bean定义的初始化
+	 *
 	 * Apply the provided default values to this bean.
 	 * @param defaults the default settings to apply
 	 * @since 2.5

@@ -102,13 +102,27 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		throw new UnsupportedOperationException("Method Injection not supported in SimpleInstantiationStrategy");
 	}
 
+	/**
+	 * 实例化Bean.
+	 *
+	 * @param bd the bean definition
+	 * @param beanName the name of the bean when it is created in this context.
+	 * The name can be {@code null} if we are autowiring a bean which doesn't
+	 * belong to the factory.
+	 * @param owner the owning BeanFactory
+	 * @param ctor the constructor to use
+	 * @param args the constructor arguments to apply
+	 * @return
+	 */
 	@Override
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
 			final Constructor<?> ctor, Object... args) {
 
+		//是否有Lookup/Replace之类的方法覆盖
 		if (!bd.hasMethodOverrides()) {
 			return BeanUtils.instantiateClass(ctor, args);
 		}
+		//使用CGLIB生成动态代理
 		else {
 			return instantiateWithMethodInjection(bd, beanName, owner, ctor, args);
 		}

@@ -43,6 +43,8 @@ import org.springframework.lang.Nullable;
 public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 
 	/**
+	 * 如果返回的不为null，那么后续的Bean的创建流程【实例化、初始化afterProperties】都不会执行，而是直接使用返回的快捷Bean.
+	 *
 	 * Apply this BeanPostProcessor <i>before the target bean gets instantiated</i>.
 	 * The returned bean object may be a proxy to use instead of the target bean,
 	 * effectively suppressing default instantiation of the target bean.
@@ -72,6 +74,9 @@ public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 	}
 
 	/**
+	 *
+	 * 返回False，则后续的InstantiationAwareBeanPostProcessor将不会被执行.
+	 *
 	 * Perform operations after the bean has been instantiated, via a constructor or factory method,
 	 * but before Spring property population (from explicit properties or autowiring) occurs.
 	 * <p>This is the ideal callback for performing custom field injection on the given bean
@@ -91,6 +96,9 @@ public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 	}
 
 	/**
+	 * 在实例化之后，提供设置属性值的扩展点.
+	 *  pvs属性值为空，则会中断后续的InstantiationAwareBeanPostProcessor的执行.
+	 *
 	 * Post-process the given property values before the factory applies them
 	 * to the given bean.
 	 * <p>The default implementation returns the given {@code pvs} as-is.

@@ -72,6 +72,7 @@ public abstract class BeanFactoryUtils {
 	}
 
 	/**
+	 * 转换真正的BeanName
 	 * Return the actual bean name, stripping out the factory dereference
 	 * prefix (if any, also stripping repeated factory prefixes if found).
 	 * @param name the name of the bean
@@ -80,10 +81,16 @@ public abstract class BeanFactoryUtils {
 	 */
 	public static String transformedBeanName(String name) {
 		Assert.notNull(name, "'name' must not be null");
+		//是否以 & 开头，FactoryBean以&开头
+		//普通Bean
 		if (!name.startsWith(BeanFactory.FACTORY_BEAN_PREFIX)) {
 			return name;
 		}
+
+		//移除工厂Bean标识 &, 提取真正的BeanName
 		return transformedBeanNameCache.computeIfAbsent(name, beanName -> {
+			//去除FactoryBean对应的name的前缀。这里FacotryBean实例的前缀为&,
+			// 应该注意的是，FacotryBean自身是可以嵌套的，即某个FactoryBean可以由其他FactoryBean创建
 			do {
 				beanName = beanName.substring(BeanFactory.FACTORY_BEAN_PREFIX.length());
 			}

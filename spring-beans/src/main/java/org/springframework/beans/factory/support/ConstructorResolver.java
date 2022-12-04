@@ -379,6 +379,8 @@ class ConstructorResolver {
 	}
 
 	/**
+	 * 基于工厂方法，实例化Bean instance.
+	 *
 	 * Instantiate the bean using a named factory method. The method may be static, if the
 	 * bean definition parameter specifies a class, rather than a "factory-bean", or
 	 * an instance variable on a factory object itself configured using Dependency Injection.

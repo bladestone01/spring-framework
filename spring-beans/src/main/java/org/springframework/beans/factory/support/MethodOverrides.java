@@ -23,6 +23,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.springframework.lang.Nullable;
 
 /**
+ *
+ * 被复写Override方法集合.
+ *
  * Set of method overrides, determining which, if any, methods on a
  * managed object the Spring IoC container will override at runtime.
  *

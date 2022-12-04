@@ -77,6 +77,16 @@ public class CglibSubclassingInstantiationStrategy extends SimpleInstantiationSt
 		return instantiateWithMethodInjection(bd, beanName, owner, null);
 	}
 
+	/**
+	 * CGLIB 动态代理生成Bean instance.
+	 *
+	 * @param bd
+	 * @param beanName
+	 * @param owner
+	 * @param ctor
+	 * @param args
+	 * @return
+	 */
 	@Override
 	protected Object instantiateWithMethodInjection(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
 			@Nullable Constructor<?> ctor, Object... args) {

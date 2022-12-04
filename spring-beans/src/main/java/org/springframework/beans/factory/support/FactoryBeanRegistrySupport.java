@@ -135,6 +135,10 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	}
 
 	/**
+	 * 从FactoryBean中获取真实的对象.
+	 *
+	 *    doXX: 一般为实际执行处理的方法.
+	 *
 	 * Obtain an object to expose from the given FactoryBean.
 	 * @param factory the FactoryBean instance
 	 * @param beanName the name of the bean

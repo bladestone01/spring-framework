@@ -505,10 +505,28 @@ abstract class AnnotationsScanner {
 		}
 	}
 
+	/**
+	 * 是否为Java内置的注解，或Spring中的Ordered
+	 *
+	 * @param type
+	 * @return
+	 */
 	static boolean hasPlainJavaAnnotationsOnly(Class<?> type) {
 		return (type.getName().startsWith("java.") || type == Ordered.class);
 	}
 
+	/**
+	 * 是否是， 不存在注解的层次结构?
+	 *    1.  AnnotatedElement is Object, return true, 不存在
+	 *    2.  AnnotatedElement is Class, 无父类，无接口，且不是其它类的内部类，依赖于Predicate Functional接口
+	 *    3.  私有方法，或方法所在的类没有继承结构，则返回true，不存在。
+	 *
+	 *
+	 * @param source
+	 * @param searchStrategy
+	 * @param searchEnclosingClass
+	 * @return
+	 */
 	@SuppressWarnings("deprecation")
 	private static boolean isWithoutHierarchy(AnnotatedElement source, SearchStrategy searchStrategy,
 			Predicate<Class<?>> searchEnclosingClass) {

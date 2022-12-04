@@ -24,6 +24,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
 /**
+ * 方法覆盖实体.
+ *
  * Object representing the override of a method on a managed object by the IoC
  * container.
  *

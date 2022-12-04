@@ -214,7 +214,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	 * @param pvs the property values to apply
 	 */
 	public RootBeanDefinition(@Nullable Class<?> beanClass, @Nullable ConstructorArgumentValues cargs,
-			@Nullable MutablePropertyValues pvs) {
+							  @Nullable MutablePropertyValues pvs) {
 
 		super(cargs, pvs);
 		setBeanClass(beanClass);
@@ -667,3 +667,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	}
 
 }
+
+
+
+

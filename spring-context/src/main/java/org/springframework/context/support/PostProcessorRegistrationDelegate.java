@@ -49,6 +49,9 @@ import org.springframework.core.metrics.StartupStep;
 import org.springframework.lang.Nullable;
 
 /**
+ * 负责处理postProcessor的代理类。
+ * 目的：减少context的逻辑复杂度，将一部分处理逻辑封装到对应的delegate中.
+ *
  * Delegate for AbstractApplicationContext's post-processor handling.
  *
  * @author Juergen Hoeller
@@ -62,6 +65,13 @@ final class PostProcessorRegistrationDelegate {
 	}
 
 
+	/**
+	 * 执行BeanFactoryPostProcessor(BeanDefinitionRegistry -> BeanFactoryPostProcessor)两个大分组。
+	 *  每一个分组按照PriorityOrder、Order和NonOrder顺序，遍历执行postProcessBeanFactory()
+	 *
+	 * @param beanFactory
+	 * @param beanFactoryPostProcessors
+	 */
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
@@ -82,11 +92,14 @@ final class PostProcessorRegistrationDelegate {
 		Set<String> processedBeans = new HashSet<>();
 
 		if (beanFactory instanceof BeanDefinitionRegistry registry) {
+			//通用 BeanFactoryPostProcessor列表
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
+			//registryProcessors列表
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor registryProcessor) {
+					//调用执行postProcessBeanDefinitionRegistry()
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
@@ -128,6 +141,9 @@ final class PostProcessorRegistrationDelegate {
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry, beanFactory.getApplicationStartup());
 			currentRegistryProcessors.clear();
 
+			//重新遍历一遍，检查是否存在未实现Order/PriorityOrder接口的BeanDefinitionRegistryPostProcessor
+			//<<Question>>
+			//不太理解： why使用while遍历 + List遍历， 而非一重List遍历.
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
 			boolean reiterate = true;
 			while (reiterate) {
@@ -150,12 +166,13 @@ final class PostProcessorRegistrationDelegate {
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
-
 		else {
 			// Invoke factory processors registered with the context instance.
+			//直接调用BeanFactoryPostProcessor
 			invokeBeanFactoryPostProcessors(beanFactoryPostProcessors, beanFactory);
 		}
 
+		//找到所有的BeanFactoryBeanPostProcessor对象.
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
 		String[] postProcessorNames =
@@ -205,6 +222,12 @@ final class PostProcessorRegistrationDelegate {
 		beanFactory.clearMetadataCache();
 	}
 
+	/**
+	 * 代理注册BeanPostProcessor实例.
+	 *
+	 * @param beanFactory
+	 * @param applicationContext
+	 */
 	public static void registerBeanPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext) {
 
@@ -333,6 +356,8 @@ final class PostProcessorRegistrationDelegate {
 	}
 
 	/**
+	 * 遍历调用BeanDefinitionRegistryPostProcessor列表.
+	 *
 	 * Invoke the given BeanDefinitionRegistryPostProcessor beans.
 	 */
 	private static void invokeBeanDefinitionRegistryPostProcessors(
@@ -379,6 +404,8 @@ final class PostProcessorRegistrationDelegate {
 
 
 	/**
+	 * 记录被实例化的BeanPostProcessor
+	 *
 	 * BeanPostProcessor that logs an info message when a bean is created during
 	 * BeanPostProcessor instantiation, i.e. when a bean is not eligible for
 	 * getting processed by all BeanPostProcessors.

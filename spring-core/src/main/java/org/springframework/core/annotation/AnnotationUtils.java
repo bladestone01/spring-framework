@@ -154,6 +154,9 @@ public abstract class AnnotationUtils {
 	}
 
 	/**
+	 * 是否为候选类
+	 *   Annotation Name不是以java开头，或不是Order.class.
+	 *
 	 * Determine whether the given class is a candidate for carrying the specified annotation
 	 * (at type, method or field level).
 	 * @param clazz the class to introspect

@@ -64,9 +64,16 @@ import org.springframework.lang.Nullable;
  */
 public abstract class AbstractRefreshableApplicationContext extends AbstractApplicationContext {
 
+	/**
+	 * 是否允许BeantioDefinition覆盖.
+	 *
+	 */
 	@Nullable
 	private Boolean allowBeanDefinitionOverriding;
 
+	/**
+	 * 是否支持循环依赖
+	 */
 	@Nullable
 	private Boolean allowCircularReferences;
 
@@ -113,6 +120,9 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 
 
 	/**
+	 * 关闭之前的BeanFactory，初始化一个新的BeanFactory.
+	 *  加载DefaultListableBeanFactory自带的BeanDefinition
+	 *
 	 * This implementation performs an actual refresh of this context's underlying
 	 * bean factory, shutting down the previous bean factory (if any) and
 	 * initializing a fresh bean factory for the next phase of the context's lifecycle.

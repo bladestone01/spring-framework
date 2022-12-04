@@ -63,6 +63,9 @@ import org.springframework.beans.BeansException;
 public interface BeanFactoryPostProcessor {
 
 	/**
+	 * BeanFactory的回调扩展点.
+	 * 在BeanFactory初始化之后，提供修改BeanFactory的扩展点.
+	 *
 	 * Modify the application context's internal bean factory after its standard
 	 * initialization. All bean definitions will have been loaded, but no beans
 	 * will have been instantiated yet. This allows for overriding or adding

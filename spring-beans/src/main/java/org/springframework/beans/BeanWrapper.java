@@ -19,6 +19,8 @@ package org.springframework.beans;
 import java.beans.PropertyDescriptor;
 
 /**
+ * Spring低级JavaBeans基础设施的中央接口。通常来说并不直接使用BeanWrapper，
+ * 而是借助BeanFactory或者DataBinder来一起使用,BeanWrapper对Spring中的Bean做了包装，为的是更加方便的操作Bean中的属性
  * The central interface of Spring's low-level JavaBeans infrastructure.
  *
  * <p>Typically not used directly but rather implicitly via a

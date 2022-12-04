@@ -32,6 +32,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.StringValueResolver;
 
 /**
+ * 处理执行ApplicationContext的Aware.
+ *
  * {@link BeanPostProcessor} implementation that supplies the {@code ApplicationContext},
  * {@link org.springframework.core.env.Environment Environment}, or
  * {@link StringValueResolver} for the {@code ApplicationContext} to beans that
@@ -88,8 +90,14 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 		return bean;
 	}
 
+	/**
+	 * 初始化ApplicationContext中的Aware值.
+	 *
+	 * @param bean
+	 */
 	private void invokeAwareInterfaces(Object bean) {
 		if (bean instanceof Aware) {
+			//类型判断 + 强类型转换
 			if (bean instanceof EnvironmentAware environmentAware) {
 				environmentAware.setEnvironment(this.applicationContext.getEnvironment());
 			}
