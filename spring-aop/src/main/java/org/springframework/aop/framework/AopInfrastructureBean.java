@@ -17,6 +17,7 @@
 package org.springframework.aop.framework;
 
 /**
+ * 标识接口： 是否为Spring AOP实现类
  * Marker interface that indicates a bean that is part of Spring's
  * AOP infrastructure. In particular, this implies that any such bean
  * is not subject to auto-proxying, even if a pointcut would match.

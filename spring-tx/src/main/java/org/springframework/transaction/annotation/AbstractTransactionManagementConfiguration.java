@@ -16,8 +16,6 @@
 
 package org.springframework.transaction.annotation;
 
-import java.util.Collection;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +29,8 @@ import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.config.TransactionManagementConfigUtils;
 import org.springframework.transaction.event.TransactionalEventListenerFactory;
 import org.springframework.util.CollectionUtils;
+
+import java.util.Collection;
 
 /**
  * Abstract base {@code @Configuration} class providing common structure for enabling
@@ -53,17 +53,33 @@ public abstract class AbstractTransactionManagementConfiguration implements Impo
 	@Nullable
 	protected TransactionManager txManager;
 
-
+	/**
+	 * 这个方法就是获取@EnableTransactionManagement的属性
+	 * importMetadata：就是@EnableTransactionManagement这个注解所在类的元信息
+	 *
+	 * @param importMetadata
+	 * @return
+	 */
 	@Override
 	public void setImportMetadata(AnnotationMetadata importMetadata) {
+		// 将EnableTransactionManagement注解中的属性对存入到map中
+		// AnnotationAttributes实际上就是个map
 		this.enableTx = AnnotationAttributes.fromMap(
 				importMetadata.getAnnotationAttributes(EnableTransactionManagement.class.getName()));
+		// 这里可以看到，限定了导入的注解必须使用@EnableTransactionManagement
 		if (this.enableTx == null) {
 			throw new IllegalArgumentException(
 					"@EnableTransactionManagement is not present on importing class " + importMetadata.getClassName());
 		}
 	}
 
+	/**
+	 * 配置TransactionManagementConfigurer
+	 * 通过TransactionManagementConfigurer向容器中注册一个事务管理器
+	 * 一般不会这么使用，更多的是通过@Bean的方式直接注册
+	 *
+	 * @param configurers
+	 */
 	@Autowired(required = false)
 	void setConfigurers(Collection<TransactionManagementConfigurer> configurers) {
 		if (CollectionUtils.isEmpty(configurers)) {
@@ -77,6 +93,13 @@ public abstract class AbstractTransactionManagementConfiguration implements Impo
 	}
 
 
+	/**
+	 *  向容器中注册一个TransactionalEventListenerFactory
+	 *  这个类用于处理@TransactionalEventListener注解
+	 *  可以实现对事件的监听，并且在事务的特定阶段对事件进行处理
+	 *
+	 * @return
+	 */
 	@Bean(name = TransactionManagementConfigUtils.TRANSACTIONAL_EVENT_LISTENER_FACTORY_BEAN_NAME)
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	public static TransactionalEventListenerFactory transactionalEventListenerFactory() {

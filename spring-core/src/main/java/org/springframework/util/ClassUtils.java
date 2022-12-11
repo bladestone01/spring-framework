@@ -913,6 +913,8 @@ public abstract class ClassUtils {
 	}
 
 	/**
+	 * 在代理类中，返回用户实际的类. 仅适用： cglib proxy
+	 *
 	 * Return the user-defined class for the given class: usually simply the given
 	 * class, but the original class in case of a CGLIB-generated subclass.
 	 * @param clazz the class to check

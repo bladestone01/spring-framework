@@ -32,6 +32,8 @@ import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.lang.Nullable;
 
 /**
+ * 单一的注解，用在合并之后的注解元数据, 其为注解的数据抽象.
+ *
  * A single merged annotation returned from a {@link MergedAnnotations}
  * collection. Presents a view onto an annotation where attribute values may
  * have been "merged" from different source values.

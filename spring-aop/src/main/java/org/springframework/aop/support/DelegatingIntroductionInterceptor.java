@@ -81,6 +81,8 @@ public class DelegatingIntroductionInterceptor extends IntroductionInfoSupport
 
 
 	/**
+	 * 对这个类进行初始化，要通过实际的实现类来找到具体要实现的接口
+	 *
 	 * Both constructors use this init method, as it is impossible to pass
 	 * a "this" reference from one constructor to another.
 	 * @param delegate the delegate object
@@ -88,15 +90,21 @@ public class DelegatingIntroductionInterceptor extends IntroductionInfoSupport
 	private void init(Object delegate) {
 		Assert.notNull(delegate, "Delegate must not be null");
 		this.delegate = delegate;
+		//找到delegate所有实现的接口
 		implementInterfacesOnObject(delegate);
 
 		// We don't want to expose the control interface
+		//隐藏这两个接口
 		suppressInterface(IntroductionInterceptor.class);
 		suppressInterface(DynamicIntroductionAdvice.class);
 	}
 
 
 	/**
+	 * 引入通知本身也是基于拦截器实现的，当执行一个方法时需要判断这个方法
+	 * 是不是被引入的接口中定义的方法，如果是的话，那么不能调用目标类的方法
+	 * 而要调用委托类的方法
+	 *
 	 * Subclasses may need to override this if they want to perform custom
 	 * behaviour in around advice. However, subclasses should invoke this
 	 * method, which handles introduced interfaces and forwarding to the target.
@@ -112,15 +120,21 @@ public class DelegatingIntroductionInterceptor extends IntroductionInfoSupport
 
 			// Massage return value if possible: if the delegate returned itself,
 			// we really want to return the proxy.
+			// 这里是处理一种特殊情况，方法的返回值是this的时候
+			// 这里应该返回代理类
 			if (retVal == this.delegate && mi instanceof ProxyMethodInvocation) {
 				Object proxy = ((ProxyMethodInvocation) mi).getProxy();
 				if (mi.getMethod().getReturnType().isInstance(proxy)) {
 					retVal = proxy;
 				}
 			}
+
 			return retVal;
 		}
 
+		// 执行到这里说明不是引入的方法，这是Spring提供了一个扩展逻辑
+		// 正常来说这个类只会处理引入的逻辑，通过这个方法可以对目标类中的方法做拦截
+		// 不常用
 		return doProceed(mi);
 	}
 
