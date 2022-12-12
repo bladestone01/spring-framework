@@ -108,9 +108,11 @@ public abstract class AbstractNestablePropertyAccessor extends AbstractPropertyA
 	 * @see #setWrappedInstance
 	 */
 	protected AbstractNestablePropertyAccessor(boolean registerDefaultEditors) {
+		//注册缺省的PropertyEditor
 		if (registerDefaultEditors) {
 			registerDefaultEditors();
 		}
+		//实例化Spring的类型转换
 		this.typeConverterDelegate = new TypeConverterDelegate(this);
 	}
 

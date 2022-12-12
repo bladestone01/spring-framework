@@ -300,6 +300,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 			//typeCheckOnly: whether the instance is obtained for a type check,not for actual use
 			//add the bean into alreadyCreated(Set)
+			//标识当前Bean是否已经Created
 			if (!typeCheckOnly) {
 				markBeanAsCreated(beanName);
 			}
@@ -314,6 +315,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
+				//依赖对象的创建，以遍历方式
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
@@ -321,8 +323,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
+						//注册到Bean的依赖Bean缓存中
 						registerDependentBean(dep, beanName);
 						try {
+							//实例化Bean/初始化
 							getBean(dep);
 						}
 						catch (NoSuchBeanDefinitionException ex) {
@@ -332,9 +336,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 				}
 
-				//创建Bean
+				//创建完依赖Bean，继续创建Bean
 				// Create bean instance.
 				if (mbd.isSingleton()) {
+					//Scope：单例
+					//借用ObjectFactory接口，Lambda实现，动态调用createBean()
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
 							return createBean(beanName, mbd, args);
@@ -349,7 +355,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					});
 					beanInstance = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
-
+                //Scope： 原型
 				else if (mbd.isPrototype()) {
 					// It's a prototype -> create a new instance.
 					Object prototypeInstance = null;
@@ -362,7 +368,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 					beanInstance = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 				}
-
+				//Scope:  Request/Session
 				else {
 					String scopeName = mbd.getScope();
 					if (!StringUtils.hasLength(scopeName)) {
@@ -1262,6 +1268,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	}
 
 	/**
+	 * 注册、设置类型转换器： ConversionService, FieldEditor。
+	 *
 	 * Initialize the given BeanWrapper with the custom editors registered
 	 * with this factory. To be called for BeanWrappers that will create
 	 * and populate bean instances.
@@ -1280,12 +1288,17 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * <p>To be called for BeanWrappers that will create and populate bean
 	 * instances, and for SimpleTypeConverter used for constructor argument
 	 * and factory method type conversion.
-	 * @param registry the PropertyEditorRegistry to initialize
+	 * @param registry the PropertyEditorRegistry to initialize; 实际上是BeanWrapper
 	 */
 	protected void registerCustomEditors(PropertyEditorRegistry registry) {
 		if (registry instanceof PropertyEditorRegistrySupport registrySupport) {
+			// 这个配置的作用就是在注册默认的属性编辑器时，可以增加对数组到字符串的转换功能
+			// 默认就是通过","来切割字符串转换成数组，对应的属性编辑器就是StringArrayPropertyEditor
 			registrySupport.useConfigValueEditors();
 		}
+
+		//将容器中的属性编辑器注册到当前的这个BeanWrapper
+		//即：属性编辑器registrar非空, 则注册到registry(BeanWrapper)
 		if (!this.propertyEditorRegistrars.isEmpty()) {
 			for (PropertyEditorRegistrar registrar : this.propertyEditorRegistrars) {
 				try {
@@ -1309,6 +1322,8 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 		}
+
+		//用户自定义的属性编辑器,注册到registry
 		if (!this.customEditors.isEmpty()) {
 			this.customEditors.forEach((requiredType, editorClass) ->
 					registry.registerCustomEditor(requiredType, BeanUtils.instantiateClass(editorClass)));

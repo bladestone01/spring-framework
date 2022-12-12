@@ -224,6 +224,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	/**
 	 * factoryBean名称
+	 *   Null： 代表其为静态工厂方法, FactoryBean Class + static method.
+	 *   NOT NULL: 代表实例工厂方法： Class + factory method
 	 */
 	@Nullable
 	private String factoryBeanName;
@@ -1266,6 +1268,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * 判断当前BD是否存在Lookup的方法重载
 	 * Validate and prepare the method overrides defined for this bean.
 	 * Checks for existence of a method with the specified name.
 	 * @throws BeanDefinitionValidationException in case of validation failure

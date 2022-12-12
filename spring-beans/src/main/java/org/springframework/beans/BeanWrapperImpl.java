@@ -26,6 +26,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 
 /**
+ *
  * Default {@link BeanWrapper} implementation that should be sufficient
  * for all typical use cases. Caches introspection results for efficiency.
  *
@@ -71,6 +72,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	 * @see #setWrappedInstance
 	 */
 	public BeanWrapperImpl() {
+		// 调用到父类的构造函数，确定要使用默认的属性编辑器
 		this(true);
 	}
 
