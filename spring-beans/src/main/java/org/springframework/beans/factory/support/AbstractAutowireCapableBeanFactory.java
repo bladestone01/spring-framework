@@ -1276,6 +1276,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// - 自动装配模式为构造函数自动装配
 		// - BeanDefinition设置了构造方法参数
 		// - 入口参数中有构造方法参数列表
+		// 在推断出来的构造函数中选取一个合适的方法来进行Bean的实例化
+		// ctors不为null：说明存在1个或多个@Autowired标注的方法
+		// mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR：说明是自动注入
+		// mbd.hasConstructorArgumentValues()：配置文件中配置了构造函数要使用的参数
+		// !ObjectUtils.isEmpty(args)：外部传入的参数，必定为null,不多考虑
+		// 上面的条件只要满足一个就会进入到autowireConstructor方法
+		// 第一个条件满足，那么通过autowireConstructor在推断出来的构造函数中再进一步选择一个差异值最小的，参数最长的构造函数
+		// 第二个条件满足，说明没有@Autowired标注的方法，但是需要进行自动注入，那么通过autowireConstructor会去遍历类中申明的所有构造函数，并查找一个差异值最小的，参数最长的构造函数
+		// 第三个条件满足，说明不是自动注入，那么要通过配置中的参数去类中申明的所有构造函数中匹配
+		// 第四个必定为null,不考虑
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
 			return autowireConstructor(beanName, mbd, ctors, args);
