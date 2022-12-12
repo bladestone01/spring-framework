@@ -158,10 +158,13 @@ import org.springframework.core.Ordered;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+//ImportSelector
 @Import(AsyncConfigurationSelector.class)
 public @interface EnableAsync {
 
 	/**
+	 * @Async: 需要在具体任务上使用的注解.
+	 *
 	 * Indicate the 'async' annotation type to be detected at either class
 	 * or method level.
 	 * <p>By default, both Spring's @{@link Async} annotation and the EJB 3.1
@@ -173,6 +176,8 @@ public @interface EnableAsync {
 	Class<? extends Annotation> annotation() default Annotation.class;
 
 	/**
+	 * 默认false，使用JDK Proxy.
+	 *
 	 * Indicate whether subclass-based (CGLIB) proxies are to be created as opposed
 	 * to standard Java interface-based proxies.
 	 * <p><strong>Applicable only if the {@link #mode} is set to {@link AdviceMode#PROXY}</strong>.
@@ -187,6 +192,7 @@ public @interface EnableAsync {
 	boolean proxyTargetClass() default false;
 
 	/**
+	 * 默认Proxy: Spring AOP
 	 * Indicate how async advice should be applied.
 	 * <p><b>The default is {@link AdviceMode#PROXY}.</b>
 	 * Please note that proxy mode allows for interception of calls through the proxy
@@ -199,6 +205,10 @@ public @interface EnableAsync {
 	AdviceMode mode() default AdviceMode.PROXY;
 
 	/**
+	 * 这个注解实际往容器中添加了一个
+	 *  AsyncAnnotationBeanPostProcessor，这个后置处理器实现了Ordered接口
+	 *  这个配置主要代表了AsyncAnnotationBeanPostProcessor执行的顺序
+	 *
 	 * Indicate the order in which the {@link AsyncAnnotationBeanPostProcessor}
 	 * should be applied.
 	 * <p>The default is {@link Ordered#LOWEST_PRECEDENCE} in order to run

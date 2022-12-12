@@ -21,6 +21,8 @@ import org.springframework.context.annotation.AdviceModeImportSelector;
 import org.springframework.lang.NonNull;
 
 /**
+ * 配置选择器.
+ *
  * Selects which implementation of {@link AbstractAsyncConfiguration} should
  * be used based on the value of {@link EnableAsync#mode} on the importing
  * {@code @Configuration} class.

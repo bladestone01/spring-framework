@@ -92,6 +92,11 @@ public class EventListenerMethodProcessor
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
+	/**
+	 * 注册赋值 eventListenerFactories
+	 *
+	 * @param beanFactory the bean factory used by the application context
+	 */
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		this.beanFactory = beanFactory;
@@ -103,6 +108,11 @@ public class EventListenerMethodProcessor
 	}
 
 
+	/**
+	 * DefaultListableBeanFactory.preInstantiateSingletons()作为入口,
+	 *  通过BeanFactoryPostProcessor入口调用.
+	 *
+	 */
 	@Override
 	public void afterSingletonsInstantiated() {
 		ConfigurableListableBeanFactory beanFactory = this.beanFactory;
@@ -176,17 +186,22 @@ public class EventListenerMethodProcessor
 				// Non-empty set of methods
 				ConfigurableApplicationContext context = this.applicationContext;
 				Assert.state(context != null, "No ApplicationContext set");
+
+				//获取EventlistenerFactory
 				List<EventListenerFactory> factories = this.eventListenerFactories;
 				Assert.state(factories != null, "EventListenerFactory List not initialized");
 				for (Method method : annotatedMethods.keySet()) {
 					for (EventListenerFactory factory : factories) {
 						if (factory.supportsMethod(method)) {
+							//@EventListener/@TransactionalEventListener
 							Method methodToUse = AopUtils.selectInvocableMethod(method, context.getType(beanName));
 							ApplicationListener<?> applicationListener =
 									factory.createApplicationListener(beanName, targetType, methodToUse);
 							if (applicationListener instanceof ApplicationListenerMethodAdapter) {
+								//注入到applicationContext
 								((ApplicationListenerMethodAdapter) applicationListener).init(context, this.evaluator);
 							}
+							//添加到容器的listener列表
 							context.addApplicationListener(applicationListener);
 							break;
 						}

@@ -120,6 +120,13 @@ public class ApplicationListenerMethodAdapter implements GenericApplicationListe
 		this.listenerId = (!id.isEmpty() ? id : null);
 	}
 
+	/**
+	 * Resolve the Event Listener方法的参数.
+	 *
+	 * @param method
+	 * @param ann
+	 * @return
+	 */
 	private static List<ResolvableType> resolveDeclaredEventTypes(Method method, @Nullable EventListener ann) {
 		int count = method.getParameterCount();
 		if (count > 1) {

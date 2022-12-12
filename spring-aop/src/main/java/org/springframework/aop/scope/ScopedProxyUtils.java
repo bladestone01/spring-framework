@@ -44,6 +44,11 @@ public abstract class ScopedProxyUtils {
 
 
 	/**
+	 * 应用场景：
+	 *  单例对象A，其中有一个属性B，B作用域是session的，这个时候容器在启动时创建A的过程中需要为A注入属性B，但是属性B的作用域为session,这种情况下注入必定会报错的
+	 *  但是当将ProxyMode属性配置为INTERFACES/TARGET_CLASS时，它会暴露一个代理对象.
+	 *  ProxyMode可以配置代理对象的生成策略是使用jdk动态代理还是生成cglib动态代理,那么当我们在创建A时，会先注入一个B的代理对象而不是直接报错
+	 *
 	 * Generate a scoped proxy for the supplied target bean, registering the target
 	 * bean with an internal name and setting 'targetBeanName' on the scoped proxy.
 	 * @param definition the original bean definition
@@ -58,11 +63,17 @@ public abstract class ScopedProxyUtils {
 
 		String originalBeanName = definition.getBeanName();
 		BeanDefinition targetDefinition = definition.getBeanDefinition();
+		// 将来会将目标对象的bd注册到容器中，targetBeanName作为注册时的key
+		// targetBeanName = "scopedTarget."+originalBeanName
 		String targetBeanName = getTargetBeanName(originalBeanName);
 
 		// Create a scoped proxy definition for the original bean name,
 		// "hiding" the target bean in an internal target definition.
+		// 创建代理对象的bd,可以看到代理对象会是一个factoryBean
+		//这里未设置: Scope
 		RootBeanDefinition proxyDefinition = new RootBeanDefinition(ScopedProxyFactoryBean.class);
+		// 代理对象所装饰的bd就是目标对象的bd
+		// 拷贝了部分目标对象bd中的属性到代理对象的bd中
 		proxyDefinition.setDecoratedDefinition(new BeanDefinitionHolder(targetDefinition, targetBeanName));
 		proxyDefinition.setOriginatingBeanDefinition(targetDefinition);
 		proxyDefinition.setSource(definition.getSource());
@@ -89,6 +100,7 @@ public abstract class ScopedProxyUtils {
 		targetDefinition.setPrimary(false);
 
 		// Register the target bean as separate bean in the factory.
+		//将原始的bd注册到容器中，其中的key="scopedTarget."+originalBeanName
 		registry.registerBeanDefinition(targetBeanName, targetDefinition);
 
 		// Return the scoped proxy definition as primary bean definition

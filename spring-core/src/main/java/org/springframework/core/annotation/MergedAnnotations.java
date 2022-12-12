@@ -28,6 +28,10 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ *  提供对组合注解的集合的访问，这些注解通常是从Class或Method之类的来源获得的。
+ *  包含了所有注解的注解，会遍历查找合并到注解集合之中.
+ *
+ *
  * Provides access to a collection of merged annotations, usually obtained
  * from a source such as a {@link Class} or {@link Method}.
  *
@@ -144,6 +148,8 @@ import org.springframework.util.Assert;
 public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>> {
 
 	/**
+	 * 判断注解是否存在，会从所有的注解中判断
+	 *
 	 * Determine if the specified annotation type is either directly present or
 	 * meta-present.
 	 * <p>Equivalent to calling {@code get(annotationType).isPresent()}.
@@ -163,6 +169,8 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 	boolean isPresent(String annotationType);
 
 	/**
+	 * 判断直接注解是否存在，也就是只判断当前类上有没有该注解，不判断注解的注解
+	 *
 	 * Determine if the specified annotation type is directly present.
 	 * <p>Equivalent to calling {@code get(annotationType).isDirectlyPresent()}.
 	 * @param annotationType the annotation type to check

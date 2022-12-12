@@ -963,7 +963,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				//判断是否为FactoryBean
 				if (isFactoryBean(beanName)) {
 					//FactoryBean: & + beanName, 初始化FactoryBean
+					// 如果是一个factoryBean的话，先创建这个factoryBean，创建factoryBean时，需要在beanName前面拼接一个&符号
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
+					//预加载
 					if (bean instanceof SmartFactoryBean<?> smartFactoryBean && smartFactoryBean.isEagerInit()) {
 						//初始化FactoryBean中的Bean, 调用getObject()
 						getBean(beanName);
@@ -971,6 +973,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 				//如果不是FactoryBean，就会利用getBean(beanName)创建对象
 				else {
+					//非FactoryBean，加载Bean
 					getBean(beanName);
 				}
 			}
@@ -978,8 +981,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		//容器初始化对象之后的扩展点, 触发所有合适的bean初始化后回调
 		// Trigger post-initialization callback for all applicable beans...
+		// 在创建了所有的Bean之后，遍历BeanNames
 		for (String beanName : beanNames) {
+			//这一步其实是从缓存中获取对应的创建的Bean，这里获取到的必定是单例的
 			Object singletonInstance = getSingleton(beanName);
+			//BeanFactoryPostProcessor的callback实现
+			// 判断是否是一个SmartInitializingSingleton，
+			// 最典型的就是EventListenerMethodProcessor，在这一步完成了对已经创建好的Bean的解析，
+			// 会判断其方法上是否有 @EventListener注解，会将这个注解标注的方法通过EventListenerFactory转换成一个事件监听器并添加到监听器的集合中
 			if (singletonInstance instanceof SmartInitializingSingleton smartSingleton) {
 				StartupStep smartInitialize = this.getApplicationStartup().start("spring.beans.smart-initialize")
 						.tag("beanName", beanName);

@@ -52,8 +52,15 @@ public class AnnotatedBeanDefinitionReader {
 
 	private BeanNameGenerator beanNameGenerator = AnnotationBeanNameGenerator.INSTANCE;
 
+	/**
+	 * @Scope解析器
+	 */
 	private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
 
+	/**
+	 * @Conditional注解的解析器.
+	 *
+	 */
 	private ConditionEvaluator conditionEvaluator;
 
 
@@ -68,6 +75,7 @@ public class AnnotatedBeanDefinitionReader {
 	 * @see #setEnvironment(Environment)
 	 */
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
+		//environment实际上就是包含了系统环境变量以及JVM启动参数
 		this(registry, getOrCreateEnvironment(registry));
 	}
 
@@ -85,6 +93,8 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+
+		// 从这个方法可以看出，Spring在创建reader对象的时候就开始注册bd
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 
@@ -238,6 +248,7 @@ public class AnnotatedBeanDefinitionReader {
 	/**
 	 * 实际注册BeanfinitioDefintifinition方法.
 	 *
+	 *
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
 	 * @param beanClass the class of the bean
@@ -254,17 +265,32 @@ public class AnnotatedBeanDefinitionReader {
 			@Nullable Class<? extends Annotation>[] qualifiers, @Nullable Supplier<T> supplier,
 			@Nullable BeanDefinitionCustomizer[] customizers) {
 
+		//使用AnnotatedGenericBeanDefinition
 		AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
+		//判断当前abd是否需要跳过注册
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
 
+		//设置注册时，提供的自定义supplier
 		abd.setInstanceSupplier(supplier);
+		//解析@Scope，获取@Scope的metadata
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
 		abd.setScope(scopeMetadata.getScopeName());
+
+		//BeanName
+		//所谓的注册bd就是指定将bd放入到容器中的一个beanDefinitionMap中
+		// 其中的key就是beanName,value就是解析class后得到的bd
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
 
+		// 解析abd中class上的注解信息，通过class对象获取到上面的注解（包括@Lazy，@Primary，@DependsOn注解等等)
+		// 然后将得到注解中对应的配置信息并放入到bd中的属性中
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
+
+		//基于入口参数或注册时的qualifier, 例如，直接在外部调用了register方法并且出入了qualifiers参数
+		// 手动直接注册了一个类，但是我们没有在类上添加@Lazy，@Primary注解，
+		// 但是又希望能将其标记为Primary为true/LazyInit为true,这个时候就手动传入Primary.class跟Lazy.class即可。
+		// 正常的容器启动阶段qualifiers肯定等于null
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
 				if (Primary.class == qualifier) {
@@ -278,14 +304,21 @@ public class AnnotatedBeanDefinitionReader {
 				}
 			}
 		}
+
+		//注册时，传入一些回调方法，在解析得到bd后调用
 		if (customizers != null) {
 			for (BeanDefinitionCustomizer customizer : customizers) {
 				customizer.customize(abd);
 			}
 		}
 
+		// bd中是没有beanName属性的，BeanDefinitionHolder中就是保存了beanName以及对应的BeanDefinition
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+		// 这个地方主要是解析Scope中的ProxyMode属性，默认为no，不生成代理对象
+		//如果ProxyMode=cglib, 则创建新的DefinitionHolder
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+		// 注册bd到容器中，实际上最终就是将bd放到了beanFactory中的一个map里（beanDefinitionMap）
+		// key为beanName,value为bd
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 	}
 

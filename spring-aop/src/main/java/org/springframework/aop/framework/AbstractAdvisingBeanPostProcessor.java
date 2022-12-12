@@ -90,6 +90,10 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 			return bean;
 		}
 
+		// 对已经被代理的类，不再生成代理，只是将通知添加到代理类的逻辑中
+		// 这里通过beforeExistingAdvisors决定是将通知添加到所有通知之前还是添加到所有通知之后
+		// 在使用@Async注解的时候，beforeExistingAdvisors被设置成了true
+		// 意味着整个方法及其拦截逻辑都会异步执行
 		if (bean instanceof Advised advised) {
 			if (!advised.isFrozen() && isEligible(AopUtils.getTargetClass(bean))) {
 				// Add our local Advisor to the existing proxy's Advisor chain...
@@ -103,6 +107,7 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 			}
 		}
 
+		// 判断需要对哪些Bean进行来代理
 		if (isEligible(bean, beanName)) {
 			ProxyFactory proxyFactory = prepareProxyFactory(bean, beanName);
 			if (!proxyFactory.isProxyTargetClass()) {

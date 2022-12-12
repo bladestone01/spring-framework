@@ -92,6 +92,10 @@ public abstract class AbstractFallbackTransactionAttributeSource
 
 
 	/**
+	 * // 获取事务对应的属性,实际上返回一个AnnotationTransactionAttributeSource
+	 * // 之后再调用AnnotationTransactionAttributeSource的getTransactionAttribute
+	 * // getTransactionAttribute:先从拦截的方法上找@Transactional注解
+	 * // 如果方法上没有的话，再从方法所在的类上找，如果类上还没有的话尝试从接口或者父类上找
 	 * Determine the transaction attribute for this method invocation.
 	 * <p>Defaults to the class's transaction attribute if no method attribute is found.
 	 * @param method the method for the current invocation (never {@code null})
@@ -121,8 +125,11 @@ public abstract class AbstractFallbackTransactionAttributeSource
 		}
 		else {
 			// We need to work it out.
+			//事务属性逻辑
 			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
+			// 缓存解析的结果，如果为事务属性为null,也放入一个标志
+			// 代表这个方法不需要进行事务管理
 			if (txAttr == null) {
 				this.attributeCache.put(cacheKey, NULL_TRANSACTION_ATTRIBUTE);
 			}
@@ -163,6 +170,8 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	@Nullable
 	protected TransactionAttribute computeTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
 		// Don't allow non-public methods, as configured.
+		// 默认情况下allowPublicMethodsOnly为true
+		// 这意味着@Transactional如果放在非public方法上不会生效
 		if (allowPublicMethodsOnly() && !Modifier.isPublic(method.getModifiers())) {
 			return null;
 		}
