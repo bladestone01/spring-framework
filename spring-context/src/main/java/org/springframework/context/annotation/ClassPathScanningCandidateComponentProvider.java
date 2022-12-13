@@ -431,8 +431,11 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 					logger.trace("Scanning " + resource);
 				}
 				try {
+					// 通过Resource构建一个MetadataReader对象，这个MetadataReader对象包含了对应class文件的解析出来的class的元信息以及注解元信息
 					MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
+					// 并不是所有的class文件文件都要被解析成为bd,只有被添加了注解（@Component,@Controller等）才是Spring中的组件
 					if (isCandidateComponent(metadataReader)) {
+						// 解析元信息（class元信息以及注解元信息）得到一个ScannedGenericBeanDefinition
 						ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 						sbd.setSource(resource);
 						if (isCandidateComponent(sbd)) {

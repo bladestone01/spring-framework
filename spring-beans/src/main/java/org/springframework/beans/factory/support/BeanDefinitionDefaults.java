@@ -20,6 +20,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
+ * Holder for 缺省值.
+ *
  * A simple holder for {@code BeanDefinition} property defaults.
  *
  * @author Mark Fisher

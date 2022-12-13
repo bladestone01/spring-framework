@@ -555,7 +555,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 			//准备Context Refresh
 			// Prepare this context for refreshing.
-			//
+			// 1.记录容器的启动时间，并将容器状态更改为激活
+			// 2.调用initPropertySources()方法，主要用于web环境下初始化封装相关的web资源，比如将servletContext封装成为ServletContextPropertySource
+			// 3.校验环境中必要的属性是否存在
+			// 4.提供了一个扩展点可以提前放入一些事件，当applicationEventMulticaster这个bean被注册到容器中后就直接发布事件
 			prepareRefresh();
 
 			//在子类中初始化BeanFactory: DefaultListableBeanFactory
@@ -718,12 +721,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// Tell the internal bean factory to use the context's class loader etc.
 		//设置类加载器、表达式处理器；添加 ResourceEditorRegistrar
 		beanFactory.setBeanClassLoader(getClassLoader());
+		//设置el表达式解析器
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
+		//容器中添加一个属性编辑器注册表
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
-		//配置 Aware 回调接口的处理器 ApplicationContextAwareProcessor，并且忽略依赖注入对应的 Aware 接口
+		//配置 Aware方法， 回调接口的处理器 ApplicationContextAwareProcessor，
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+
+		//忽略依赖注入对应的 Aware 接口
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
 		beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
@@ -735,6 +742,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		//在装配模式下，提供的默认装配类型;注册依赖注入时可解析的依赖
 		// BeanFactory interface not registered as resolvable type in a plain factory.
 		// MessageSource registered (and found for autowiring) as a bean.
+		// 在进行属性注入时会从resolvableDependencies的map中查找是否有对应类型的bean存在，
+		// 如果有的话就直接注入
 		beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
 		beanFactory.registerResolvableDependency(ResourceLoader.class, this);
 		beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
@@ -745,10 +754,12 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
-		//AOP 相关
+		//AOP 相关,
+		// 是否配置了LTW,也就是在类加载时期进行织入，一般都不会配置
 		if (!NativeDetector.inNativeImage() && beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
 			// Set a temporary ClassLoader for type matching.
+			// 加载时期织入会配置一个临时的类加载器
 			beanFactory.setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));
 		}
 
