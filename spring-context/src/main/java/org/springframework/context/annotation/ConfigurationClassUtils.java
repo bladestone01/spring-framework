@@ -96,11 +96,14 @@ public abstract class ConfigurationClassUtils {
 			BeanDefinition beanDef, MetadataReaderFactory metadataReaderFactory) {
 
 		String className = beanDef.getBeanClassName();
+		//未配置beanClass为FactoryBean，或配置FactoryMethodName为工厂方法
 		if (className == null || beanDef.getFactoryMethodName() != null) {
 			return false;
 		}
 
+		// AnnotationMetadata包含了对应class上的注解元信息以及class元信息
 		AnnotationMetadata metadata;
+		//类名相同，则复用beanDef中的metadata
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
@@ -116,10 +119,12 @@ public abstract class ConfigurationClassUtils {
 					EventListenerFactory.class.isAssignableFrom(beanClass)) {
 				return false;
 			}
+			//生成metadata, 拿到字节码重新解析获取到一个AnnotationMetadata
 			metadata = AnnotationMetadata.introspect(beanClass);
 		}
 		else {
 			try {
+				// class属性都没有，就根据className利用ASM字节码技术获取到这个AnnotationMetadata
 				MetadataReader metadataReader = metadataReaderFactory.getMetadataReader(className);
 				metadata = metadataReader.getAnnotationMetadata();
 			}
@@ -132,10 +137,15 @@ public abstract class ConfigurationClassUtils {
 			}
 		}
 
+		//获取@Configuration属性
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
+		//why proxyBeanMethods?
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		// 如果被这些注解标注了，@Component，@ComponentScan，@Import，@ImportResource
+		// 或者方法上有@Bean注解，那么就是一个LiteConfigurationCandidate
+		// 也就是说你想把这个类当配置类使用，但是没有添加@Configuration注解
 		else if (config != null || isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
@@ -153,6 +163,8 @@ public abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * Configuration Candidate。
+	 *
 	 * Check the given metadata for a configuration class candidate
 	 * (or nested component class declared within a configuration/component class).
 	 * @param metadata the metadata of the annotated class
