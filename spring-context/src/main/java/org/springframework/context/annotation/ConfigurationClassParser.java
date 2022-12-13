@@ -161,6 +161,7 @@ class ConfigurationClassParser {
 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
+				// 三个判断最终都会进入到同一个方法---->processConfigurationClass方法
 				if (bd instanceof AnnotatedBeanDefinition) {
 					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
 				}
@@ -180,6 +181,7 @@ class ConfigurationClassParser {
 			}
 		}
 
+		// 对ImportSelector进行延迟处理
 		this.deferredImportSelectorHandler.process();
 	}
 
@@ -217,34 +219,49 @@ class ConfigurationClassParser {
 	}
 
 	protected void processConfigurationClass(ConfigurationClass configClass, Predicate<String> filter) throws IOException {
+		// 解析@Conditional注解，判断是否需要解析
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
 
+		//获取Cache中的配置类
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
+		//不为空，则说明已经解析过
 		if (existingClass != null) {
+			// 如果这个要被解析的配置类是被@Import注解导入的
 			if (configClass.isImported()) {
+				//解析过的配置类，也是被@Import注解导入
 				if (existingClass.isImported()) {
+					// 那么这个配置类的导入类集合中新增当前的配置类的导入类，（A通过@Import导入了B，那么A就是B的导入类，B被A导入）
 					existingClass.mergeImportedBy(configClass);
 				}
 				// Otherwise ignore new imported config class; existing non-imported class overrides it.
+				// 如果已经解析过的配置类不是被导入的，那么直接忽略新增的这个被导入的配置类。也就是说如果一个配置类同时被@Import导入以及正常的
+				// 添加到容器中，那么正常添加到容器中的配置类会覆盖被导入的类
 				return;
 			}
 			else {
 				// Explicit bean definition found, probably replacing an import.
 				// Let's remove the old one and go with the new one.
+				// 就是说新要被解析的这个配置类不是被导入的，所以这种情况下，直接移除调原有的解析的配置类
+				// 为什么不是remove(existingClass)呢？可以看看hashCode跟equals方法
+				// remove(existingClass)跟remove(configClass)是等价的
 				this.configurationClasses.remove(configClass);
 				this.knownSuperclasses.values().removeIf(configClass::equals);
 			}
 		}
 
 		// Recursively process the configuration class and its superclass hierarchy.
+		// 下面这段代码主要是递归的处理配置类及其父类
+		//  将配置类封装成一个SourceClass方便进行统一的处理
 		SourceClass sourceClass = asSourceClass(configClass, filter);
 		do {
+			// doxxx方法，真正干活的方法，对配置类进行处理，返回值是当前这个类的父类
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass, filter);
 		}
 		while (sourceClass != null);
 
+		//解析过的，放入Cache
 		this.configurationClasses.put(configClass, configClass);
 	}
 
@@ -261,12 +278,15 @@ class ConfigurationClassParser {
 			ConfigurationClass configClass, SourceClass sourceClass, Predicate<String> filter)
 			throws IOException {
 
+		//当前类使用了@Component
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
+			//解析其内部类
 			// Recursively process any member (nested) classes first
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
 		// Process any @PropertySource annotations
+		// 处理@PropertySources跟@PropertySource注解，将对应的属性资源添加容器中（实际上添加到environment中）
 		for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), PropertySources.class,
 				org.springframework.context.annotation.PropertySource.class)) {
@@ -289,11 +309,16 @@ class ConfigurationClassParser {
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
+				// 检查扫描出来的bd是否是配置类，如果是配置类递归进行解析
 				for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
+					// 一般情况下getOriginatingBeanDefinition获取到的都是null
+					// 什么时候不为null呢？,参考：ScopedProxyUtils.createScopedProxy方法
+					// 在创建一个代理的bd时不会为null
 					BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
+					// 判断扫描出来的bd是否是一个配置类，如果是的话继续递归处理
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
 					}
@@ -317,15 +342,20 @@ class ConfigurationClassParser {
 		}
 
 		// Process individual @Bean methods
+		// 处理@Bean注解
+		// 获取到被@Bean标注的方法
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
+			// 添加到configClass中
 			configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
 		}
 
 		// Process default methods on interfaces
+		// 处理接口中的default方法
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
+		// 返回父类，进行递归处理
 		if (sourceClass.getMetadata().hasSuperClass()) {
 			String superclass = sourceClass.getMetadata().getSuperClassName();
 			if (superclass != null && !superclass.startsWith("java") &&
@@ -473,15 +503,20 @@ class ConfigurationClassParser {
 			return;
 		}
 
+		// checkForCircularImports：Spring中写死的为true,需要检查循环导入
+		//  // isChainedImportOnStack方法：检查导入栈中是否存在了这个configClass，如果存在了说明
+		//  // 出现了A import B,B import A的情况，直接抛出异常
 		if (checkForCircularImports && isChainedImportOnStack(configClass)) {
 			this.problemReporter.error(new CircularImportProblem(configClass, this.importStack));
 		}
 		else {
+			// 没有出现循环导入，先将当前的这个配置类加入到导入栈中
 			this.importStack.push(configClass);
 			try {
 				for (SourceClass candidate : importCandidates) {
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
+						// 反射创建这个ImportSelector
 						Class<?> candidateClass = candidate.loadClass();
 						ImportSelector selector = ParserStrategyUtils.instantiateClass(candidateClass, ImportSelector.class,
 								this.environment, this.resourceLoader, this.registry);
@@ -489,27 +524,38 @@ class ConfigurationClassParser {
 						if (selectorFilter != null) {
 							exclusionFilter = exclusionFilter.or(selectorFilter);
 						}
+						// 如果是一个DeferredImportSelector，添加到deferredImportSelectors集合中去
+						// 在所有的配置类完成解析后再去处理deferredImportSelectors集合中的ImportSelector
 						if (selector instanceof DeferredImportSelector) {
 							this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
 						}
 						else {
+							// 不是一个DeferredImportSelector，那么通过这个ImportSelector获取到要导入的类名
 							String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
+							// 将其转换成SourceClass
 							Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames, exclusionFilter);
+							//// 递归处理要导入的类，一般情况下这个时候进入的就是另外两个判断了
 							processImports(configClass, currentSourceClass, importSourceClasses, exclusionFilter, false);
 						}
 					}
 					else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
 						// Candidate class is an ImportBeanDefinitionRegistrar ->
 						// delegate to it to register additional bean definitions
+						// 如果是一个ImportBeanDefinitionRegistrar
+						// 先通过反射创建这个ImportBeanDefinitionRegistrar
 						Class<?> candidateClass = candidate.loadClass();
 						ImportBeanDefinitionRegistrar registrar =
 								ParserStrategyUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class,
 										this.environment, this.resourceLoader, this.registry);
+						// 最后将其添加到configClass的importBeanDefinitionRegistrars集合中
+						// 之后会统一调用其ImportBeanDefinitionRegistrar的registerBeanDefinitions方法，将对应的bd注册到容器中
 						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
 					}
 					else {
 						// Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar ->
 						// process it as an @Configuration class
+						// 既不是一个ImportSelector也不是一个ImportBeanDefinitionRegistrar，直接导入一个普通类
+						// 并将这个类作为配置类进行递归处理
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
 						processConfigurationClass(candidate.asConfigClass(configClass), exclusionFilter);
@@ -525,6 +571,7 @@ class ConfigurationClassParser {
 						configClass.getMetadata().getClassName() + "]: " + ex.getMessage(), ex);
 			}
 			finally {
+				// 在循环前我们将其加入了导入栈中，循环完成后将其弹出，主要是为了处理循环导入
 				this.importStack.pop();
 			}
 		}
