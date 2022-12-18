@@ -290,6 +290,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 	 */
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
+		// 这个方法就是找到这个正在创建的Bean中需要注入的字段，并放入缓存中
 		findInjectionMetadata(beanName, beanType, beanDefinition);
 	}
 

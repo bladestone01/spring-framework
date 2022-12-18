@@ -161,6 +161,7 @@ public abstract class AbstractFallbackTransactionAttributeSource
 	}
 
 	/**
+	 *
 	 * Same signature as {@link #getTransactionAttribute}, but doesn't cache the result.
 	 * {@link #getTransactionAttribute} is effectively a caching decorator for this method.
 	 * <p>As of 4.1.8, this method can be overridden.

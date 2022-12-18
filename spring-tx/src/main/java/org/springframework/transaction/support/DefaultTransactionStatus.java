@@ -50,6 +50,9 @@ import org.springframework.util.Assert;
  */
 public class DefaultTransactionStatus extends AbstractTransactionStatus {
 
+	/**
+	 * 内部事务嵌套Transaction
+	 */
 	@Nullable
 	private final Object transaction;
 

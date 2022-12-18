@@ -527,6 +527,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Prepare method overrides.
 		//检查是否存在基于方法的Lookup重载
+		// 第二步：处理lookup-method跟replace-method，判断是否存在方法的重载
 		// 对XML标签中定义的lookUp属性进行预处理，如果只能根据名字找到一个就标记为非重载的，这样在后续就不需要去推断到底是哪个方法了
 		// 对于@LookUp注解标注的方法是不需要在这里处理的，AutowiredAnnotationBeanPostProcessor会处理这个注解
 		try {
@@ -759,6 +760,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	@Nullable
 	protected Class<?> getTypeForFactoryMethod(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
+		//返回类型
 		ResolvableType cachedReturnType = mbd.factoryMethodReturnType;
 		if (cachedReturnType != null) {
 			return cachedReturnType.resolve();
@@ -767,10 +769,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Class<?> commonType = null;
 		Method uniqueCandidate = mbd.factoryMethodToIntrospect;
 
+		//如果没有反射的方法为空
 		if (uniqueCandidate == null) {
 			Class<?> factoryClass;
 			boolean isStatic = true;
 
+			//工厂Bean名称
 			String factoryBeanName = mbd.getFactoryBeanName();
 			if (factoryBeanName != null) {
 				if (factoryBeanName.equals(beanName)) {
@@ -778,11 +782,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 							"factory-bean reference points back to the same bean definition");
 				}
 				// Check declared factory method return type on factory class.
+				//工厂实例方法，非静态
 				factoryClass = getType(factoryBeanName);
 				isStatic = false;
 			}
 			else {
 				// Check declared factory method return type on bean class.
+				//当前类的类型
 				factoryClass = resolveBeanClass(mbd, beanName, typesToMatch);
 			}
 
@@ -860,6 +866,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Common return type found: all factory methods return same type. For a non-parameterized
 		// unique candidate, cache the full type declaration context of the target factory method.
+		//如果基于introspect获取的方法不为空，则获取方法返回结果的Type
 		cachedReturnType = (uniqueCandidate != null ?
 				ResolvableType.forMethodReturnType(uniqueCandidate) : ResolvableType.forClass(commonType));
 		mbd.factoryMethodReturnType = cachedReturnType;
@@ -998,6 +1005,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object exposedObject = bean;
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (SmartInstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().smartInstantiationAware) {
+				// 在这里保证注入的对象是一个代理的对象（如果需要代理的话），主要用于循环依赖
 				exposedObject = bp.getEarlyBeanReference(exposedObject, beanName);
 			}
 		}
@@ -1154,9 +1162,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// Make sure bean class is actually resolved at this point.
 			//非代理或合成, 且存在InstantiationAware BeanPostProcessor
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+				//获取这个Beandefinition的类型Class
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
 					//内部遍历所有InstantiationAwareBeanPostProcessor,在实例化之前调用.
+					// 这里执行的主要是AbstractAutoProxyCreator这个类中的方法，决定是否要进行AOP代理
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
 					//如果InstantiationAwareBeanPostProcessor.postProcessBeforeInstantiation()创建出Bean，
 					// 则调用所有的postProcessAfterInitialization()
@@ -1167,6 +1177,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				}
 			}
 			//标识其已经调用过/解析过
+			// bean != null基本会一直返回false,所以beforeInstantiationResolved这个变量也会一直为false
 			mbd.beforeInstantiationResolved = (bean != null);
 		}
 		return bean;
@@ -1215,6 +1226,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
 		// Make sure bean class is actually resolved at this point.
+		//从xml配置文件解析出来的Class属性，需要从string转换为Classs
 		Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
 		//beanClass为private，或不允许public method access

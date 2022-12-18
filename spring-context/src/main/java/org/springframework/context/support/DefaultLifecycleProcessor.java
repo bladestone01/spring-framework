@@ -139,12 +139,23 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 	// Internal helpers
 
 	private void startBeans(boolean autoStartupOnly) {
+		// 获取所有实现了Lifecycle接口的Bean,如果采用了factroyBean的方式配置了一个LifecycleBean,那么factroyBean本身也要实现Lifecycle接口
+		// 配置为懒加载的LifecycleBean必须实现SmartLifeCycle才能被调用start方法
 		Map<String, Lifecycle> lifecycleBeans = getLifecycleBeans();
+		// key:如果实现了SmartLifeCycle，则为其getPhase方法返回的值，如果只是实现了Lifecycle，则返回0
+		// value:相同phase的Lifecycle的集合，并将其封装到了一个LifecycleGroup中
 		Map<Integer, LifecycleGroup> phases = new TreeMap<>();
 
 		lifecycleBeans.forEach((beanName, bean) -> {
+			// 我们可以看到autoStartupOnly这个变量在上层传递过来的
+			// 这个参数意味着是否只启动“自动”的Bean,这是什么意思呢？就是说，不需要手动调用容器的start方法
+			// 从这里可以看出，实现了SmartLifecycle接口的类并且其isAutoStartup如果返回true的话，会在容器启动过程中自动调用，而仅仅实现了Lifecycle接口的类并不会被调用。
+			// 如果我们去阅读容器的start方法的会发现，当调用链到达这个方法时，autoStartupOnly这个变量写死的为false
 			if (!autoStartupOnly || (bean instanceof SmartLifecycle smartLifecycle && smartLifecycle.isAutoStartup())) {
+				// 获取这个Bean执行的阶段，实际上就是调用SmartLifecycle中的getPhase方法
+				// 如果没有实现SmartLifecycle，而是单纯的实现了Lifecycle，那么直接返回0
 				int phase = getPhase(bean);
+				//如果不存在，则创建一个分组，并将元素放入其中
 				phases.computeIfAbsent(
 						phase,
 						p -> new LifecycleGroup(phase, this.timeoutPerShutdownPhase, lifecycleBeans, autoStartupOnly)
@@ -165,6 +176,7 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 	private void doStart(Map<String, ? extends Lifecycle> lifecycleBeans, String beanName, boolean autoStartupOnly) {
 		Lifecycle bean = lifecycleBeans.remove(beanName);
 		if (bean != null && bean != this) {
+			// 获取这个Bean依赖的其它Bean,在启动时先启动其依赖的Bean
 			String[] dependenciesForBean = getBeanFactory().getDependenciesForBean(beanName);
 			for (String dependency : dependenciesForBean) {
 				doStart(lifecycleBeans, dependency, autoStartupOnly);
@@ -231,6 +243,8 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 									bean.getClass().getName() + "] to stop");
 						}
 						countDownBeanNames.add(beanName);
+						// 还记得到SmartLifecycle中的stop方法吗？里面接受了一个Runnable参数
+						// 就是在这里地方传进去的。主要就是进行一个操作latch.countDown()，标记当前的lifeCycleBean的stop方法执行完成
 						smartLifecycle.stop(() -> {
 							latch.countDown();
 							countDownBeanNames.remove(beanName);
@@ -365,7 +379,10 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 				logger.debug("Stopping beans in phase " + this.phase);
 			}
 			this.members.sort(Collections.reverseOrder());
+
+			// 创建了一个CountDownLatch，需要等待的线程数量为当前阶段的所有lifecycleBean的数量
 			CountDownLatch latch = new CountDownLatch(this.smartMemberCount);
+			// stop方法可以异步执行，这里保存的是还没有执行完的lifecycleBean的名称
 			Set<String> countDownBeanNames = Collections.synchronizedSet(new LinkedHashSet<>());
 			Set<String> lifecycleBeanNames = new HashSet<>(this.lifecycleBeans.keySet());
 			for (LifecycleGroupMember member : this.members) {
@@ -378,6 +395,7 @@ public class DefaultLifecycleProcessor implements LifecycleProcessor, BeanFactor
 				}
 			}
 			try {
+				// 最大等待时间30s，超时进行日志打印
 				latch.await(this.timeout, TimeUnit.MILLISECONDS);
 				if (latch.getCount() > 0 && !countDownBeanNames.isEmpty() && logger.isInfoEnabled()) {
 					logger.info("Failed to shut down " + countDownBeanNames.size() + " bean" +

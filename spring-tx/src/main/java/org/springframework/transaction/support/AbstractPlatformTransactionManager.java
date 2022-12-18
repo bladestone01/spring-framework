@@ -752,20 +752,25 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	 */
 	@Override
 	public final void commit(TransactionStatus status) throws TransactionException {
+		//检验事务的状态，如果已经完成，则抛出异常
 		if (status.isCompleted()) {
 			throw new IllegalTransactionStateException(
 					"Transaction is already completed - do not call commit or rollback more than once per transaction");
 		}
 
 		DefaultTransactionStatus defStatus = (DefaultTransactionStatus) status;
+		//检查status是否被设置为了只能回滚
 		if (defStatus.isLocalRollbackOnly()) {
 			if (defStatus.isDebug()) {
 				logger.debug("Transactional code has requested rollback");
 			}
+			//处理回滚
 			processRollback(defStatus, false);
 			return;
 		}
 
+		//当内部的事务发生回滚时（supports、required)，默认情况下会将整个事务对象标记为回滚; 外部事务提交时，会进入这个判断
+		//shouldCommitOnGlobalRollbackOnly: 在全局被标记为回滚时，是否还需要提交，默认为false
 		if (!shouldCommitOnGlobalRollbackOnly() && defStatus.isGlobalRollbackOnly()) {
 			if (defStatus.isDebug()) {
 				logger.debug("Global transaction is marked as rollback-only but transactional code requested commit");
@@ -876,6 +881,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	}
 
 	/**
+	 * 回滚处理
 	 * Process an actual rollback.
 	 * The completed flag has already been checked.
 	 * @param status object representing the transaction
@@ -900,13 +906,16 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 					}
 					doRollback(status);
 				}
+				//已有事务，且无保存点
 				else {
 					// Participating in larger transaction
+					//嵌套事务，且内部事务的传播规则是required, supports, mandatory
 					if (status.hasTransaction()) {
 						if (status.isLocalRollbackOnly() || isGlobalRollbackOnParticipationFailure()) {
 							if (status.isDebug()) {
 								logger.debug("Participating transaction failed - marking existing transaction as rollback-only");
 							}
+							//设置rollbackOnly为true
 							doSetRollbackOnly(status);
 						}
 						else {

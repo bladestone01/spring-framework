@@ -43,6 +43,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.util.StringValueResolver;
 
 /**
+ * 继承了GenericConversionService ，所以它能对Converter进行一系列的操作
+ * 实现了接口FormatterRegistry，所以它也可以注册格式化器了
+ * 实现了EmbeddedValueResolverAware，所以它还能有非常强大的功能：处理占位符
+ *
  * A {@link org.springframework.core.convert.ConversionService} implementation
  * designed to be configured as a {@link FormatterRegistry}.
  *
@@ -67,6 +71,12 @@ public class FormattingConversionService extends GenericConversionService
 	}
 
 
+	/**
+	 * // 最终也是交给addFormatterForFieldType去做的
+	 * 	// getFieldType：它会拿到泛型类型。并且支持DecoratingProxy
+	 *
+	 * @param printer the printer to add
+	 */
 	@Override
 	public void addPrinter(Printer<?> printer) {
 		Class<?> fieldType = getFieldType(printer, Printer.class);
@@ -84,6 +94,14 @@ public class FormattingConversionService extends GenericConversionService
 		addFormatterForFieldType(getFieldType(formatter), formatter);
 	}
 
+	/**
+	 * 存储都是分开存储的  读写分离
+	 * PrinterConverter和ParserConverter都是一个GenericConverter  采用内部类实现的
+	 * 注意：他们的ConvertiblePair必有一个类型是String.class
+	 * Locale一般都可以这么获取：LocaleContextHolder.getLocale()
+	 * 在进行printer之前，会先判断是否能进行类型转换，如果能进行类型转换会先进行类型转换，之后再格式化
+	 * 在parse之后，会判断是否还需要进行类型转换，如果需要类型转换会先进行类型转换
+	 */
 	@Override
 	public void addFormatterForFieldType(Class<?> fieldType, Formatter<?> formatter) {
 		addConverter(new PrinterConverter(fieldType, formatter, this));
@@ -103,6 +121,11 @@ public class FormattingConversionService extends GenericConversionService
 				annotationFormatterFactory instanceof EmbeddedValueResolverAware embeddedValueResolverAware) {
 			embeddedValueResolverAware.setEmbeddedValueResolver(this.embeddedValueResolver);
 		}
+
+		// 对每一种字段的type  都注册一个AnnotationPrinterConverter去处理
+		// AnnotationPrinterConverter是一个ConditionalGenericConverter
+		// matches方法为：sourceType.hasAnnotation(this.annotationType);
+		// 这个判断是呼应的：因为annotationFormatterFactory只会作用在指定的字段类型上的，不符合类型条件的不用添加
 		Set<Class<?>> fieldTypes = annotationFormatterFactory.getFieldTypes();
 		for (Class<?> fieldType : fieldTypes) {
 			addConverter(new AnnotationPrinterConverter(annotationType, annotationFormatterFactory, fieldType));

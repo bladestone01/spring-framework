@@ -965,7 +965,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					//FactoryBean: & + beanName, 初始化FactoryBean
 					// 如果是一个factoryBean的话，先创建这个factoryBean，创建factoryBean时，需要在beanName前面拼接一个&符号
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
-					//预加载
+					//默认的FactoryBean为延迟加载，只有为SmartFactoryBean才有可能为预加载
 					if (bean instanceof SmartFactoryBean<?> smartFactoryBean && smartFactoryBean.isEagerInit()) {
 						//初始化FactoryBean中的Bean, 调用getObject()
 						getBean(beanName);

@@ -30,6 +30,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ * 基于线程模式的资源和事务管理器.
+ *
  * Central delegate that manages resources and transaction synchronizations per thread.
  * To be used by resource management code but not by typical application code.
  *
@@ -151,7 +153,7 @@ public abstract class TransactionSynchronizationManager {
 			// Remove entire ThreadLocal if empty...
 			if (map.isEmpty()) {
 				resources.remove();
-			}
+
 			value = null;
 		}
 		return value;

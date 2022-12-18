@@ -272,6 +272,11 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	String getDestroyMethodName();
 
 	/**
+	 * Spring可以对bd设置不同的角色:
+	 *  用户定义 int ROLE_APPLICATION = 0;
+	 *  某些复杂的配置    int ROLE_SUPPORT = 1;
+	 *  完全内部使用   int ROLE_INFRASTRUCTURE = 2;
+	 *
 	 * Set the role hint for this {@code BeanDefinition}. The role hint
 	 * provides the frameworks as well as tools an indication of
 	 * the role and importance of a particular {@code BeanDefinition}.
