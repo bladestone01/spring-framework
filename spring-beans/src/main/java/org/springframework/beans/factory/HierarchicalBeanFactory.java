@@ -19,6 +19,8 @@ package org.springframework.beans.factory;
 import org.springframework.lang.Nullable;
 
 /**
+ * 支持parentFactory.
+ *
  * Sub-interface implemented by bean factories that can be part
  * of a hierarchy.
  *

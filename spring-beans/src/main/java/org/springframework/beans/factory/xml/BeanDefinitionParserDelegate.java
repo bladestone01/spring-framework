@@ -1402,6 +1402,8 @@ public class BeanDefinitionParserDelegate {
 
 	/**
 	 * Decorate the given bean definition through a namespace handler, if applicable.
+	 * 所谓装饰decroated: 将node属性值，包装为BeanDefinition重的property.
+	 *
 	 * @param ele the current element
 	 * @param originalDef the current bean definition
 	 * @param containingBd the containing bean definition (if any)

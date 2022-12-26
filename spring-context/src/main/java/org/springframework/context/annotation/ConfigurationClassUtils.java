@@ -96,7 +96,7 @@ public abstract class ConfigurationClassUtils {
 			BeanDefinition beanDef, MetadataReaderFactory metadataReaderFactory) {
 
 		String className = beanDef.getBeanClassName();
-		//未配置beanClass为FactoryBean，或配置FactoryMethodName为工厂方法
+		//未配置beanClassName为FactoryBean，或配置FactoryMethodName为工厂方法
 		if (className == null || beanDef.getFactoryMethodName() != null) {
 			return false;
 		}
@@ -113,6 +113,8 @@ public abstract class ConfigurationClassUtils {
 			// Check already loaded Class if present...
 			// since we possibly can't even load the class file for this Class.
 			Class<?> beanClass = ((AbstractBeanDefinition) beanDef).getBeanClass();
+
+			//排除如下类, 如匹配，则返回false
 			if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass) ||
 					BeanPostProcessor.class.isAssignableFrom(beanClass) ||
 					AopInfrastructureBean.class.isAssignableFrom(beanClass) ||
@@ -139,7 +141,7 @@ public abstract class ConfigurationClassUtils {
 
 		//获取@Configuration属性
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
-		//why proxyBeanMethods?
+		//proxyBeanMethods为true
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}

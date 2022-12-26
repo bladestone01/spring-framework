@@ -251,6 +251,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	/**
 	 * 描述在运行时，被动态覆盖的方法集合.
+	 * replace/lookup
 	 *
 	 */
 	private MethodOverrides methodOverrides = new MethodOverrides();
@@ -276,6 +277,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	/**
 	 * 是否执行destroy method状态
+	 *
 	 */
 	private boolean enforceDestroyMethod = true;
 
@@ -291,7 +293,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	private boolean synthetic = false;
 
 	/**
-	 * 当前bean 定义的角色，初始化为 ROLE_APPLICATION ， 提示这是一个应用bean
+	 * 当前bean 定义的角色，初始化为 ROLE_APPLICATION ， 提示这是一个应用bean,用户定义Bean
+	 *
 	 * 另外还有基础设施bean（仅供框架内部工作使用），和 支持bean
 	 *
 	 */
@@ -548,6 +551,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * beanClass 是否指定Class
 	 * Return whether this definition specifies a bean class.
 	 * @see #getBeanClass()
 	 * @see #setBeanClass(Class)

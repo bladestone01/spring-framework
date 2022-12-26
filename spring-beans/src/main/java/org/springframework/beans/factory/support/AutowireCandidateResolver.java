@@ -22,6 +22,8 @@ import org.springframework.beans.factory.config.DependencyDescriptor;
 import org.springframework.lang.Nullable;
 
 /**
+ * 用于推断一个特定的beanDefinition是否能作为指定依赖的候选者的策略接口
+ *
  * Strategy interface for determining whether a specific bean definition
  * qualifies as an autowire candidate for a specific dependency.
  *
@@ -32,6 +34,8 @@ import org.springframework.lang.Nullable;
 public interface AutowireCandidateResolver {
 
 	/**
+	 * 	// 默认情况下直接根据bd中的定义返回，如果没有进行特殊配置的话为true
+	 *
 	 * Determine whether the given bean definition qualifies as an
 	 * autowire candidate for the given dependency.
 	 * <p>The default implementation checks
@@ -46,6 +50,8 @@ public interface AutowireCandidateResolver {
 	}
 
 	/**
+	 *  // 指定的依赖是否是必要的
+	 *
 	 * Determine whether the given descriptor is effectively required.
 	 * <p>The default implementation checks {@link DependencyDescriptor#isRequired()}.
 	 * @param descriptor the descriptor for the target method parameter or field
@@ -59,6 +65,11 @@ public interface AutowireCandidateResolver {
 	}
 
 	/**
+	 * // QualifierAnnotationAutowireCandidateResolver做了实现，判断是否有@Qualifier注解
+	 *     // 一共有两种注解：
+	 *     // 1.Spring内置的@Qualifier注解，org.springframework.beans.factory.annotation.Qualifier
+	 *     // 2.添加了JSR-330相关依赖，javax.inject.Qualifier注解
+	 *     // 默认情况下返回false
 	 * Determine whether the given descriptor declares a qualifier beyond the type
 	 * (typically - but not necessarily - a specific kind of annotation).
 	 * <p>The default implementation returns {@code false}.
@@ -73,6 +84,9 @@ public interface AutowireCandidateResolver {
 	}
 
 	/**
+	 * // QualifierAnnotationAutowireCandidateResolver做了实现
+	 * // 获取一个该依赖一个建议的值
+	 *
 	 * Determine whether a default value is suggested for the given dependency.
 	 * <p>The default implementation simply returns {@code null}.
 	 * @param descriptor the descriptor for the target method parameter or field
@@ -86,6 +100,9 @@ public interface AutowireCandidateResolver {
 	}
 
 	/**
+	 * // 对某个依赖我们想要延迟注入，但是在创建Bean的过程中这个依赖又是必须的
+	 * // 通过下面这个方法就能为延迟注入的依赖先生成一个代理注入到bean中
+	 *
 	 * Build a proxy for lazy resolution of the actual dependency target,
 	 * if demanded by the injection point.
 	 * <p>The default implementation simply returns {@code null}.

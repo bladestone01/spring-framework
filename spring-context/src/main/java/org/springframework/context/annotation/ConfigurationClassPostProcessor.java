@@ -102,6 +102,8 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
 /**
+ * 处理@Configuration类.
+ *
  * {@link BeanFactoryPostProcessor} used for bootstrapping processing of
  * {@link Configuration @Configuration} classes.
  *
@@ -156,6 +158,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 	private MetadataReaderFactory metadataReaderFactory = new CachingMetadataReaderFactory();
 
+	/**
+	 * 标记metadataReaderFactory是否被设置过.
+	 */
 	private boolean setMetadataReaderFactoryCalled = false;
 
 	private final Set<Integer> registriesPostProcessed = new HashSet<>();
@@ -242,6 +247,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		this.environment = environment;
 	}
 
+	/**
+	 * Source Loader is partially depedent on metadataReaderFactory.
+	 *
+	 * @param resourceLoader the ResourceLoader object to be used by this object
+	 */
 	@Override
 	public void setResourceLoader(ResourceLoader resourceLoader) {
 		Assert.notNull(resourceLoader, "ResourceLoader must not be null");
@@ -271,10 +281,14 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
 		//生成一个注册表ID
 		int registryId = System.identityHashCode(registry);
+		//已注册，则报异常
 		if (this.registriesPostProcessed.contains(registryId)) {
 			throw new IllegalStateException(
 					"postProcessBeanDefinitionRegistry already called on this post-processor against " + registry);
 		}
+
+		//postProcessor is invoked already
+		//postProcessor被调用过, 则报出异常
 		if (this.factoriesPostProcessed.contains(registryId)) {
 			throw new IllegalStateException(
 					"postProcessBeanFactory already called on this post-processor against " + registry);
@@ -337,6 +351,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	}
 
 	/**
+	 * 处理配置Bean
 	 * Build and validate a configuration model based on the registry of
 	 * {@link Configuration} classes.
 	 */
@@ -347,6 +362,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+
+			//属性CONFIGURATION_CLASS_ATTRIBUTE(configurationClass)已设置
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);

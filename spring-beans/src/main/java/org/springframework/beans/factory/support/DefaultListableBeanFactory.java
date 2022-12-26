@@ -1010,6 +1010,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		Assert.hasText(beanName, "Bean name must not be empty");
 		Assert.notNull(beanDefinition, "BeanDefinition must not be null");
 
+		/**
+		 * 在注册之前的最后一次校验： 检查method-override和Factory-method是否重叠
+		 * 初始化methodOverride中的methodOverload标识位.
+		 */
 		if (beanDefinition instanceof AbstractBeanDefinition abd) {
 			try {
 				abd.validate();

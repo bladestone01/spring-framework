@@ -33,12 +33,16 @@ package org.springframework.aop;
 public interface Pointcut {
 
 	/**
+	 * 在类级别进行过滤.
+	 *
 	 * Return the ClassFilter for this pointcut.
 	 * @return the ClassFilter (never {@code null})
 	 */
 	ClassFilter getClassFilter();
 
 	/**
+	 * 在方法级别进行过滤
+	 *
 	 * Return the MethodMatcher for this pointcut.
 	 * @return the MethodMatcher (never {@code null})
 	 */
@@ -46,6 +50,7 @@ public interface Pointcut {
 
 
 	/**
+	 * 一个单例对象，默认匹配所有
 	 * Canonical Pointcut instance that always matches.
 	 */
 	Pointcut TRUE = TruePointcut.INSTANCE;
